@@ -187,14 +187,14 @@ def localize_image_pipeline(kapture_map_path: str,
         recover_args.append('-f')
     run_python_command(local_recover_path, recover_args, python_binary)
 
-    # send localization result
-    result_file = path.join(local_recover_path, 'sensors/trajectories.txt')
-    with open(result_file) as file:
-        results = file.readlines()
-        results = [line.rstrip() for line in results if line != '\n']
-        for i in range(0, len(results)):
-            result = results[i].split()
-            print(result+'\n')
+    # # send localization result
+    # result_file = path.join(kapture_localize_recover_path, 'sensors/trajectories.txt')
+    # with open(result_file) as file:
+    #     results = file.readlines()
+    #     results = [line.rstrip() for line in results if line != '\n']
+    #     for i in range(0, len(results)):
+    #         result = results[i].split()
+    #         print(result+'\n')
     
     
 
@@ -210,7 +210,7 @@ def localize_image_pipeline_command_line():
                         help='silently delete pairfile and localization results if already exists.')
     parser.add_argument('-i', '--kapture-map', required=True,
                         help='path to the kapture map directory')
-    parser.add_argument('--query', required=True,
+    parser.add_argument('--query-img', required=True,
                         help='input path to query image data root directory')
     parser.add_argument('-kpt', '--keypoints-path', required=True,
                         help='input path to the orphan keypoints folder')
@@ -255,9 +255,6 @@ def localize_image_pipeline_command_line():
         kapture.utils.logging.getLogger().setLevel(args.verbose)
         kapture_localization.utils.logging.getLogger().setLevel(args.verbose)
 
-    if args.pairsfile_path is not None and args.topk != default_topk:
-        logger.warning(f'pairsfile was given explicitely, paramerer topk={args.topk} will be ignored')
-
     args_dict = vars(args)
     logger.debug('localize_image.py \\\n' + '  \\\n'.join(
         '--{:20} {:100}'.format(k, str(v)) for k, v in args_dict.items()))
@@ -267,19 +264,19 @@ def localize_image_pipeline_command_line():
             python_binary = sys.executable
             logger.debug(f'python_binary set to {python_binary}')
         localize_image_pipeline(args.kapture_map,
-                       args.query,
-                       args.keypoints_path,
-                       args.descriptors_path,
-                       args.global_features_path,
-                       args.matches_path,
-                       args.matches_gv_path,
-                       args.colmap_map,
-                       args.output,
-                       args.colmap_binary,
-                       python_binary,
-                       args.topk,
-                       args.config,
-                       args.force)
+                                args.query_img,
+                                args.keypoints_path,
+                                args.descriptors_path,
+                                args.global_features_path,
+                                args.matches_path,
+                                args.matches_gv_path,
+                                args.colmap_map,
+                                args.output,
+                                args.colmap_binary,
+                                python_binary,
+                                args.topk,
+                                args.config,
+                                args.force)
     else:
         raise EnvironmentError('Please restart this command as admin, it is required for os.symlink'
                                'see https://docs.python.org/3.6/library/os.html#os.symlink')
