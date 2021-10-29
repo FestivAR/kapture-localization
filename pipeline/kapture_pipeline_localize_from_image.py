@@ -10,12 +10,13 @@ import kapture_localization.utils.logging
 from kapture_localization.utils.symlink import can_use_symlinks, create_kapture_proxy_single_features
 from kapture_localization.utils.subprocess import run_python_command
 from kapture_localization.colmap.colmap_command import CONFIGS
-from kapture_localization.utils.BenchmarkFormatStyle import BenchmarkFormatStyle, get_benchmark_format_command
 
 import kapture_localization.utils.path_to_kapture  # noqa: F401
 import kapture.utils.logging
 from kapture.utils.paths import safe_remove_file
-logger = logging.getLogger('localize_image')    
+
+logger = logging.getLogger('localize_image')
+
 
 def localize_image_pipeline(kapture_map_path: str,
                             query_image_path: str,
@@ -31,10 +32,9 @@ def localize_image_pipeline(kapture_map_path: str,
                             topk: int,
                             config: int,
                             force_overwrite_existing: bool) -> None:
-
-    keypoints_type=None
-    descriptors_type=None
-    global_features_type=None
+    keypoints_type = None
+    descriptors_type = None
+    global_features_type = None
 
     os.makedirs(localization_output_path, exist_ok=True)
     pairsfile_path = path.join(localization_output_path, f'pairs_localization_{topk}.txt')
@@ -50,13 +50,14 @@ def localize_image_pipeline(kapture_map_path: str,
         os.makedirs(matches_gv_path)
 
     # make kapture data from query image
-    kapture_import_image_path = path.join(pipeline_import_paths.HERE_PATH, '../../kapture/tools/kapture_import_image_folder.py')
+    # kapture_import_image_path = path.join(pipeline_import_paths.HERE_PATH,
+    #                                       '../../kapture/tools/kapture_import_image_folder.py')
     kapture_query_path = path.join(kapture_map_path, '../query')
     import_image_args = ['-i', query_image_path,
                          '-o', kapture_query_path]
     if force_overwrite_existing:
-            import_image_args.append('-f')
-    run_python_command(kapture_import_image_path, import_image_args)
+        import_image_args.append('-f')
+    run_python_command('kapture_import_image_folder.py', import_image_args)
 
     # build proxy kapture map in output folder
     proxy_kapture_map_path = path.join(localization_output_path, 'kapture_inputs/proxy_mapping')
@@ -98,10 +99,10 @@ def localize_image_pipeline(kapture_map_path: str,
     # kapture_merge.py
     local_merge_path = path.join(pipeline_import_paths.HERE_PATH, '../../kapture/tools/kapture_merge.py')
     merge_args = ['-v', str(logger.level),
-                    '-i', proxy_kapture_map_path, proxy_kapture_query_path,
-                    '-o', map_plus_query_path,
-                    '-s', 'keypoints', 'descriptors', 'global_features', 'matches',
-                    '--image_transfer', 'link_absolute']
+                  '-i', proxy_kapture_map_path, proxy_kapture_query_path,
+                  '-o', map_plus_query_path,
+                  '-s', 'keypoints', 'descriptors', 'global_features', 'matches',
+                  '--image_transfer', 'link_absolute']
     if force_overwrite_existing:
         merge_args.append('-f')
     run_python_command(local_merge_path, merge_args, python_binary)
@@ -138,14 +139,14 @@ def localize_image_pipeline(kapture_map_path: str,
                                          descriptors_type,
                                          global_features_type,
                                          force_overwrite_existing)
-    
+
     # kapture_run_colmap_gv.py
     local_run_colmap_gv_path = path.join(pipeline_import_paths.HERE_PATH, '../tools/kapture_run_colmap_gv.py')
     run_colmap_gv_args = ['-v', str(logger.level),
-                            '-i', proxy_kapture_map_plus_query_path,
-                            '-o', proxy_kapture_map_plus_query_gv_path,
-                            '--pairsfile-path', pairsfile_path,
-                            '-colmap', colmap_binary]
+                          '-i', proxy_kapture_map_plus_query_path,
+                          '-o', proxy_kapture_map_plus_query_gv_path,
+                          '--pairsfile-path', pairsfile_path,
+                          '-colmap', colmap_binary]
     if force_overwrite_existing:
         run_colmap_gv_args.append('-f')
     run_python_command(local_run_colmap_gv_path, run_colmap_gv_args, python_binary)
@@ -153,12 +154,12 @@ def localize_image_pipeline(kapture_map_path: str,
     # kapture_colmap_localize.py
     local_localize_path = path.join(pipeline_import_paths.HERE_PATH, '../tools/kapture_colmap_localize.py')
     localize_args = ['-v', str(logger.level),
-                        '-i', proxy_kapture_map_plus_query_gv_path,
-                        '-o', colmap_localize_path,
-                        '-colmap', colmap_binary,
-                        '--pairs-file-path', pairsfile_path,
-                        '-db', path.join(colmap_map_path, 'colmap.db'),
-                        '-txt', path.join(colmap_map_path, 'reconstruction')]
+                     '-i', proxy_kapture_map_plus_query_gv_path,
+                     '-o', colmap_localize_path,
+                     '-colmap', colmap_binary,
+                     '--pairs-file-path', pairsfile_path,
+                     '-db', path.join(colmap_map_path, 'colmap.db'),
+                     '-txt', path.join(colmap_map_path, 'reconstruction')]
     if force_overwrite_existing:
         localize_args.append('-f')
     localize_args += CONFIGS[config]
@@ -166,18 +167,18 @@ def localize_image_pipeline(kapture_map_path: str,
 
     # kapture_import_colmap.py
     local_import_colmap_path = path.join(pipeline_import_paths.HERE_PATH,
-                                            '../../kapture/tools/kapture_import_colmap.py')
+                                         '../../kapture/tools/kapture_import_colmap.py')
     import_colmap_args = ['-v', str(logger.level),
-                            '-db', path.join(colmap_localize_path, 'colmap.db'),
-                            '-txt', path.join(colmap_localize_path, 'reconstruction'),
-                            '-o', kapture_localize_import_path,
-                            '--skip_reconstruction']
+                          '-db', path.join(colmap_localize_path, 'colmap.db'),
+                          '-txt', path.join(colmap_localize_path, 'reconstruction'),
+                          '-o', kapture_localize_import_path,
+                          '--skip_reconstruction']
     if force_overwrite_existing:
         import_colmap_args.append('-f')
     run_python_command(local_import_colmap_path, import_colmap_args, python_binary)
 
     local_recover_path = path.join(pipeline_import_paths.HERE_PATH,
-                                    '../tools/kapture_recover_timestamps_and_ids.py')
+                                   '../tools/kapture_recover_timestamps_and_ids.py')
     recover_args = ['-v', str(logger.level),
                     '-i', kapture_localize_import_path,
                     '--ref', kapture_query_path,
@@ -187,16 +188,21 @@ def localize_image_pipeline(kapture_map_path: str,
         recover_args.append('-f')
     run_python_command(local_recover_path, recover_args, python_binary)
 
-    # # send localization result
-    # result_file = path.join(kapture_localize_recover_path, 'sensors/trajectories.txt')
-    # with open(result_file) as file:
-    #     results = file.readlines()
-    #     results = [line.rstrip() for line in results if line != '\n']
-    #     for i in range(0, len(results)):
-    #         result = results[i].split()
-    #         print(result+'\n')
-    
-    
+    # send localization result
+    try:
+        result_file = path.join(kapture_localize_recover_path, 'sensors/trajectories.txt')
+        with open(result_file) as file:
+            results = file.readlines()
+            results = [line.rstrip() for line in results if line != '\n']
+            for i in range(0, len(results)):
+                if results[i][0] == '#':
+                    continue
+                else:
+                    print(results[i].lstrip() + '\n')
+    except OSError:
+        logger.info('No result trajectories found!')
+        print('No result trajectories found!\n')
+
 
 def localize_image_pipeline_command_line():
     parser = argparse.ArgumentParser(description='localize a single image on a colmap map')
@@ -236,8 +242,8 @@ def localize_image_pipeline_command_line():
     parser_python_bin.add_argument('-python', '--python_binary', required=False,
                                    default=None,
                                    help='full path to python binary '
-                                   '(default is "None", i.e. assume the os'
-                                   ' can infer the python binary from the files itself, shebang or extension).')
+                                        '(default is "None", i.e. assume the os'
+                                        ' can infer the python binary from the files itself, shebang or extension).')
     parser_python_bin.add_argument('--auto-python-binary', action='store_true', default=False,
                                    help='use sys.executable as python binary.')
     default_topk = 20
@@ -280,7 +286,6 @@ def localize_image_pipeline_command_line():
     else:
         raise EnvironmentError('Please restart this command as admin, it is required for os.symlink'
                                'see https://docs.python.org/3.6/library/os.html#os.symlink')
-    
 
 
 if __name__ == '__main__':

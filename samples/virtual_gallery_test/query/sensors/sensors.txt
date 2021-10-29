@@ -1,0 +1,6 @@
+# kapture format: 1.1
+# sensor_id, name, sensor_type, [sensor_params]+
+sensor6, , camera, UNKNOWN_CAMERA, 1920, 1080
+sensor7, , camera, UNKNOWN_CAMERA, 1920, 1080
+sensor8, , camera, UNKNOWN_CAMERA, 1920, 1080
+sensor9, , camera, UNKNOWN_CAMERA, 1920, 1080

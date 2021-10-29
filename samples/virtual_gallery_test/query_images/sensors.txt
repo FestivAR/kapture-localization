@@ -1,0 +1,6 @@
+# kapture format: 1.1
+# sensor_id, name, sensor_type, [sensor_params]+
+testing_light_1_occlusion_1_frame_267, , camera, UNKNOWN_CAMERA, 1920, 1080
+testing_light_1_occlusion_1_frame_446, , camera, UNKNOWN_CAMERA, 1920, 1080
+testing_light_1_occlusion_1_frame_481, , camera, UNKNOWN_CAMERA, 1920, 1080
+testing_light_1_occlusion_1_frame_491, , camera, UNKNOWN_CAMERA, 1920, 1080

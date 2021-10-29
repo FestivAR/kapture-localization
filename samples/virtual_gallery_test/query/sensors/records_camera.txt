@@ -1,0 +1,6 @@
+# kapture format: 1.1
+# timestamp, device_id, image_path
+6, sensor6, testing/gallery_light1_occlusion1/frames/rgb/camera_0/rgb_00267.jpg
+7, sensor7, testing/gallery_light1_occlusion1/frames/rgb/camera_0/rgb_00446.jpg
+8, sensor8, testing/gallery_light1_occlusion1/frames/rgb/camera_0/rgb_00481.jpg
+9, sensor9, testing/gallery_light1_occlusion1/frames/rgb/camera_0/rgb_00491.jpg
