@@ -7,10 +7,10 @@
 # and run this script from there (of course you can also change WORKING_DIR=${PWD} to something else and run the script from somewhere else)
 
 # 0a) Define paths and params
-PYTHONBIN=python3.6
+PYTHONBIN=python
 WORKING_DIR=${PWD}
 DATASETS_PATH=${WORKING_DIR}/datasets
-DATASET=Aachen-Day-Night-v1.1
+DATASET=ETH-Microsoft_ICCV2021_preview
 mkdir -p ${DATASETS_PATH}
 
 TOPK=20  # number of retrieved images for mapping and localization
@@ -36,12 +36,7 @@ git clone https://github.com/naver/r2d2.git
 # Note that you will be asked to accept or decline the license terms before download.
 mkdir ${DATASETS_PATH}
 kapture_download_dataset.py --install_path ${DATASETS_PATH} update
-kapture_download_dataset.py --install_path ${DATASETS_PATH} install ${DATASET}_mapping ${DATASET}_query_day ${DATASET}_query_night
-rm -rf ${DATASETS_PATH}/${DATASET}/mapping/reconstruction # remove the keypoints and 3D points that come with the dataset (this is Aachen specific)
-kapture_merge.py -v debug \
-  -i ${DATASETS_PATH}/${DATASET}/query_day ${DATASETS_PATH}/${DATASET}/query_night \
-  -o ${DATASETS_PATH}/${DATASET}/query \
-  --image_transfer link_relative
+kapture_download_dataset.py --install_path ${DATASETS_PATH} install ETH-Microsoft_ICCV2021_preview_mapping ETH-Microsoft_ICCV2021_preview_query
 
 # 2) Create temporal mapping and query sets (they will be modified)
 mkdir -p ${WORKING_DIR}/${DATASET}/mapping/sensors
@@ -100,4 +95,5 @@ kapture_pipeline_localize.py -v debug -f \
   --colmap-map ${WORKING_DIR}/${DATASET}/colmap-sfm/${LOCAL}/${GLOBAL} \
   -o ${WORKING_DIR}/${DATASET}/colmap-localize/${LOCAL}/${GLOBAL} \
   --topk ${TOPK} \
-  --config 2
+  --config 2 \
+  --benchmark-style ETH_Microsoft
