@@ -1,6 +1,14 @@
 # macos
 .DS_Store
 
+<<<<<<< HEAD
+=======
+# data files
+server/data
+server/local_data
+samples
+
+>>>>>>> main
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

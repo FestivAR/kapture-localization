@@ -3,9 +3,13 @@ import logging
 import os
 import os.path as path
 import sys
+import subprocess
 from typing import List, Optional
 
-import pipeline_import_paths  # noqa: F401
+sys.path.append(path.dirname(path.abspath(path.dirname(__file__))))
+
+from pipeline import pipeline_import_paths  # noqa: F401
+
 import kapture_localization.utils.logging
 from kapture_localization.utils.symlink import can_use_symlinks, create_kapture_proxy_single_features
 from kapture_localization.utils.subprocess import run_python_command
@@ -18,7 +22,9 @@ from kapture.utils.paths import safe_remove_file
 logger = logging.getLogger('localize_image')
 
 
-def localize_image_pipeline(kapture_map_path: str,
+def localize_image_pipeline(lfeat_ext_path: str,
+                            gfeat_ext_path: str,
+                            kapture_map_path: str,
                             query_image_path: str,
                             keypoints_path: str,
                             descriptors_path: str,
@@ -58,6 +64,32 @@ def localize_image_pipeline(kapture_map_path: str,
     if force_overwrite_existing:
         import_image_args.append('-f')
     run_python_command('kapture_import_image_folder.py', import_image_args)
+
+    # extract local features. 
+    # Only for r2d2 with pre defined settings. must be same with mapping kapture extracter settings.
+    # lfeat_extracter_path = path.join(lfeat_ext_path, 'extract_kapture_modif.py')
+    lfeat_extracter_path = path.join(lfeat_ext_path, 'extract_kapture_modif.py')
+    lfeat_ext_args = ['python', lfeat_extracter_path,
+                      '--model', path.join(lfeat_ext_path, 'models/faster2d2_WASF_N16.pt'),
+                      '--kapture-root', kapture_query_path,
+                      '--top-k', '5000',
+                      '--gpu', '0']
+    # extract global features.
+    # Only for deep-image-retrival with pre defined settings. must be same with kapture extracter settings.
+    gfeat_extracter_path = path.abspath(gfeat_ext_path)
+    gfeat_ext_args = ['python', 
+                      '-m', 'dirtorch.extract_kapture_modif',
+                      '--kapture-root', path.abspath(kapture_query_path), 
+                      '--checkpoint', path.join(gfeat_extracter_path, 'dirtorch/data/Resnet101-AP-GeM-LM18.pt'),
+                      '--gpu', '0']
+
+    use_shell = sys.platform.startswith("win")
+    python_process = [subprocess.Popen(lfeat_ext_args, shell=use_shell),
+                      subprocess.Popen(gfeat_ext_args, shell=use_shell, cwd=gfeat_extracter_path)]
+    for proc in python_process:
+        proc.wait()
+        if proc.returncode != 0:
+            raise ValueError('\nSubprocess Error (Return code:' f' {proc.returncode} )')
 
     # build proxy kapture map in output folder
     proxy_kapture_map_path = path.join(localization_output_path, 'kapture_inputs/proxy_mapping')
@@ -189,6 +221,7 @@ def localize_image_pipeline(kapture_map_path: str,
     run_python_command(local_recover_path, recover_args, python_binary)
 
     # send localization result
+    # for now, only 1 last img's traj is available
     try:
         result_file = path.join(kapture_localize_recover_path, 'sensors/trajectories.txt')
         with open(result_file) as file:
@@ -198,10 +231,13 @@ def localize_image_pipeline(kapture_map_path: str,
                 if results[i][0] == '#':
                     continue
                 else:
-                    print(results[i].lstrip() + '\n')
+                    print(results[i].lstrip())
+            return results
+
     except OSError:
         logger.info('No result trajectories found!')
         print('No result trajectories found!\n')
+        return ['0']
 
 
 def localize_image_pipeline_command_line():
@@ -214,6 +250,10 @@ def localize_image_pipeline_command_line():
                                   dest='verbose', const=logging.CRITICAL)
     parser.add_argument('-f', '-y', '--force', action='store_true', default=True,
                         help='silently delete pairfile and localization results if already exists.')
+    parser.add_argument('-lfext', '--lfeat-ext-path', required=True,
+                        help='path to the local feature extracter') # path to r2d2
+    parser.add_argument('-gfext', '--gfeat-ext-path', required=True,
+                        help='path to the global feature extractor') # path to deep-image-retrival
     parser.add_argument('-i', '--kapture-map', required=True,
                         help='path to the kapture map directory')
     parser.add_argument('--query-img', required=True,
@@ -269,7 +309,9 @@ def localize_image_pipeline_command_line():
         if args.auto_python_binary:
             python_binary = sys.executable
             logger.debug(f'python_binary set to {python_binary}')
-        localize_image_pipeline(args.kapture_map,
+        localize_image_pipeline(args.lfeat_ext_path,
+                                args.gfeat_ext_path,
+                                args.kapture_map,
                                 args.query_img,
                                 args.keypoints_path,
                                 args.descriptors_path,
