@@ -1,3 +1,11 @@
+# macos
+.DS_Store
+
+# data files
+server/data
+server/local_data
+samples
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
