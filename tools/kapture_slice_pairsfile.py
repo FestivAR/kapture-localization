@@ -5,6 +5,7 @@ import argparse
 import os
 import logging
 import pathlib
+import math
 
 import path_to_kapture_localization  # noqa: F401
 import kapture_localization.utils.logging
@@ -31,14 +32,17 @@ def slice_pairsfile(pairsfile_path: str,
     image_pairs = []
     for name_query, paired_images in sorted(similarity_dict.items()):
         paired_images_threshold = [x for x in paired_images if x[1] >= threshold]
-        if startk + topk > len(paired_images_threshold):
+        if math.isfinite(topk) and startk + topk > len(paired_images_threshold):
             logger.debug(
                 f'image {name_query} has {len(paired_images_threshold)} pairs, '
                 f'less than topk={topk} (with startk={startk})')
             if skip_if_na:
                 logger.debug(f'skipping {name_query}')
                 continue
-        paired_images_threshold = paired_images_threshold[startk:startk+topk]
+        if math.isinf(topk):
+            paired_images_threshold = paired_images_threshold[startk:]
+        else:
+            paired_images_threshold = paired_images_threshold[startk:startk+topk]
         for name_map, score in paired_images_threshold:
             image_pairs.append((name_query, name_map, score))
 
@@ -75,7 +79,8 @@ def slice_pairsfile_command_line():
                         type=int,
                         help='start position of topk')
     parser.add_argument('--skip-if-na', action='store_true', default=False,
-                        help='Skip query image if startk + topk greater than available pairs (i.e. na, not available)')
+                        help=('Skip query image if startk + topk greater than available pairs (i.e. na, not available)'
+                              '; does not apply when topk is infinity'))
     args = parser.parse_args()
     logger.setLevel(args.verbose)
     if args.verbose <= logging.DEBUG:
